@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+*.so
+venv/
+.venv/
+
+# Environment
+.env
+.env.example
+
+# Database
+*.sqlite3
+
+# ChromaDB
+chroma_db/
+
+# Media files
+media/uploads/
+
+# Frontend (rebuild inside container)
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Git
+.git/
+.gitignore
+
+# Docs
+README.md

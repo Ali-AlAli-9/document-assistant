@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+*.so
+
+# Virtualenv
+venv/
+.venv/
+
+# Environment
+.env
+
+# Database
+*.sqlite3
+
+# ChromaDB
+chroma_db/
+
+# Bundled embedding model (download separately — ~87MB)
+models/
+
+# Media files
+media/uploads/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
