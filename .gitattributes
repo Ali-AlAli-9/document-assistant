@@ -1,0 +1,10 @@
+# Normalize line endings.
+#
+# The Docker image is built on Linux from this repository, and a single CRLF
+# line ending inside a Dockerfile or a `sh -c "..."` command makes the build
+# fail with the notoriously cryptic `/bin/sh^M: not found`. Checking out on
+# Windows must therefore never inject CRLF into files that end up in the image.
+* text=auto eol=lf
+
+# Lock files stay LF-only by convention; keep them explicit.
+frontend/package-lock.json text eol=lf

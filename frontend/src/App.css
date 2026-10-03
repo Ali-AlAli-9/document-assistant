@@ -1,0 +1,1437 @@
+/* ==========================================================================
+   Design system — ported from the "dsign" (Adminmart free) reference theme
+   Tailwind config palette + component language, expressed as plain CSS so the
+   React components stay untouched (class names are unchanged).
+
+   Reference vocabulary being reproduced:
+     font .............. Poppins (latin/numerals) + Cairo (Arabic glyphs)
+     primary ........... #0075FF  (blue) with darkblue/navyblue ink
+     cards ............ white, rounded-3xl (24px), Tailwind's shadow-xl
+     tinted panels .... rgba(47,184,227,.2)  (tailwind "bluebg")
+     circular chips .... rounded-full + 0 19px 28px rgba(0,0,0,.1) shadow
+     primary button .... "leafbutton" = border-radius 0 30px 30px 40px
+     navbar ........... translucent offwhite, 0 15px 30px rgba(0,0,0,.12)
+   ========================================================================== */
+
+/* Poppins is the reference typeface but ships no Arabic glyphs, so Arabic
+   falls through to Cairo (same geometric, humanist feel) while Latin words and
+   digits keep Poppins' character. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* --- reference palette (tailwind.config.js, verbatim) --- */
+  --white: #ffffff;
+  --blue: #0075FF;
+  --lightblue: #DAEBFF;
+  --lightgrey: #AEC7E4;
+  --navyblue: #002834;
+  --darkblue: #000321;
+  --beach: #8EA9C1;
+  --circlebg: rgba(77, 213, 143, 0.25);
+  --offwhite: rgba(255, 255, 255, 0.75);
+  --bordertop: rgba(196, 196, 196, 0.5);
+  --darkgray: #90A3B4;
+  --babyblue: #E2F3F9;
+  --grey500: #ECECEC;
+  --bluegray: #7D82A1;
+  --bluegrey: #7C8F9E;
+  --midnightblue: #183B56;
+  --midblue: #00276F;
+  --bluebg: rgba(47, 184, 227, 0.2);
+  --border: rgba(128, 135, 137, 0.35);
+
+  /* --- derived: hover/active states + tints of the same hues --- */
+  --blue-600: #0062CC;
+  --blue-soft: rgba(0, 117, 255, 0.08);
+  --page: #F4F9FE;
+
+  /* --- secondary TEXT ink --------------------------------------------------
+     Muted on purpose: it has to read as subordinate to --navyblue, not as body
+     copy. It is deliberately NOT one of the reference palette's greys, because
+     every one of those fails WCAG 2.1 AA for normal text on this app's light
+     surfaces. Measured, not eyeballed:
+
+         --darkgray  #90A3B4   2.60:1 on white    2.45:1 on --page
+         --bluegray  #7D82A1   3.76:1             3.55:1
+         --bluegrey  #7C8F9E   3.34:1             3.16:1
+
+     AA asks 4.5:1 below 18.66px, and the hints these tokens styled sit at
+     0.8rem = 12.8px, so they failed the threshold by nearly half.
+
+     This token is 5.27:1 on white and 4.97:1 on --page, clearing AA on both
+     surfaces the app actually renders on. It is not pushed to 7:1 (AAA) on
+     purpose: staying visibly quieter than --navyblue at 15.52:1 is the whole
+     job of secondary text, and the darker --midnightblue #183B56 (11.67:1)
+     would have been mistaken for body copy.
+
+     --darkgray stays defined: it is still the disabled-button fill
+     (.btn-primary:disabled, .chat-input button:disabled). WCAG exempts inactive
+     controls from 1.4.3, and a faded fill is what reads as disabled at all.
+     Do not point TEXT back at it.
+     --------------------------------------------------------------------- */
+  --ink-muted: #5A6E82;
+  --green: #1F7A52;
+  --green-soft: rgba(77, 213, 143, 0.18);
+  --red: #D64550;
+  --red-ink: #B23A45;
+  --red-soft: rgba(214, 69, 80, 0.09);
+
+  /* --- elevation --- */
+  --shadow-sm: 0 4px 12px -4px rgba(0, 39, 111, 0.12);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 24px 48px -20px rgba(0, 39, 111, 0.28);
+  --shadow-nav: 0 15px 30px rgba(0, 0, 0, 0.06);
+  --shadow-blue: 0 10px 22px -10px rgba(0, 117, 255, 0.6);
+
+  /* --- the reference's signature "leaf" button radius, mirrored for RTL
+         (sharp corner on the inline-start side instead of top-left) --- */
+  --leaf: 18px 0 18px 26px;
+  --leaf-lg: 24px 0 24px 36px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+  background: var(--page);
+  color: var(--navyblue);
+  direction: rtl;
+  font-size: 16px;
+  /* Arabic needs more leading than the reference's latin-tuned 1.5rem. */
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Inline icon aligned with adjacent text (direction-aware spacing). */
+.icon-inline {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -0.15em;
+  margin-inline-end: 5px;
+  color: currentColor;
+}
+
+/* ========== LAYOUT (max-w-7xl) ========== */
+.app-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+/* ---- navbar: full-bleed, translucent, sticky (reference .navbar) ---- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  width: 100vw;
+  margin: -28px calc(50% - 50vw) 28px;
+  background: var(--offwhite);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid var(--bordertop);
+  box-shadow: var(--shadow-nav);
+}
+
+.header-content {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--navyblue);
+  line-height: 1.2;
+}
+
+.app-header p {
+  color: var(--ink-muted);
+  margin-top: 4px;
+  font-size: 0.85rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-username {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--navyblue);
+  white-space: nowrap;
+}
+
+/* primary action = the reference's leafbutton */
+.header-settings-btn {
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  border-radius: var(--leaf);
+  padding: 10px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-blue);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.header-settings-btn:hover {
+  background: var(--blue-600);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px -12px rgba(0, 117, 255, 0.7);
+}
+
+/* secondary action = reference's outlined button (border-lightgrey + blue) */
+.header-logout-btn {
+  background: transparent;
+  border: 1px solid var(--lightgrey);
+  color: var(--midblue);
+  border-radius: 999px;
+  padding: 7px 16px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.header-logout-btn:hover {
+  background: var(--midblue);
+  border-color: var(--midblue);
+  color: var(--white);
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ---- card: white, rounded-3xl, shadow-xl ---- */
+.card {
+  background: var(--white);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: var(--shadow-xl);
+}
+
+.card h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  color: var(--navyblue);
+  margin-bottom: 20px;
+}
+
+/* ========== STATUS BANNERS ========== */
+.status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 18px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: messageFadeIn 0.3s ease-out;
+}
+
+.status-loading {
+  background: var(--lightblue);
+  color: var(--midblue);
+  border: 1px solid rgba(0, 117, 255, 0.18);
+}
+
+.status-error {
+  background: var(--red-soft);
+  color: var(--red-ink);
+  border: 1px solid rgba(214, 69, 80, 0.22);
+}
+
+.upload-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ========== SHARED FEEDBACK ========== */
+.error-message {
+  background: var(--red-soft);
+  color: var(--red-ink);
+  padding: 12px 16px;
+  border-radius: 16px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  border: 1px solid rgba(214, 69, 80, 0.22);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-message::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23D64550'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'/%3E%3C/svg%3E") no-repeat center;
+  background-size: contain;
+  flex-shrink: 0;
+}
+
+.success-message {
+  background: var(--green-soft);
+  color: var(--green);
+  padding: 12px 16px;
+  border-radius: 16px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  border: 1px solid rgba(77, 213, 143, 0.4);
+}
+
+.loading {
+  text-align: center;
+  padding: 24px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--ink-muted);
+  padding: 40px 24px;
+  font-size: 0.92rem;
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* ========== UPLOAD ZONE (tinted panel, dashed) ========== */
+.upload-zone {
+  border: 2px dashed rgba(0, 117, 255, 0.3);
+  border-radius: 24px;
+  padding: 52px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: rgba(47, 184, 227, 0.1);
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--blue);
+  background: var(--lightblue);
+  transform: translateY(-2px);
+}
+
+.upload-zone.drag-over {
+  border-style: solid;
+  box-shadow: var(--shadow-blue);
+}
+
+.upload-icon-svg {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  color: var(--midblue);
+  display: block;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.upload-zone:hover .upload-icon-svg {
+  color: var(--blue);
+  transform: scale(1.06);
+}
+
+.upload-zone p {
+  color: var(--navyblue);
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.upload-hint {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.upload-status {
+  color: var(--midblue);
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Spinner */
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid rgba(0, 117, 255, 0.2);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== DOCUMENT LIST ========== */
+.doc-list {
+  list-style: none;
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px;
+  border-radius: 16px;
+  transition: background 0.15s;
+  cursor: default;
+}
+
+.doc-item:hover {
+  background: rgba(0, 117, 255, 0.04);
+}
+
+.doc-item + .doc-item {
+  border-top: 1px solid rgba(196, 196, 196, 0.45);
+}
+
+.doc-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.doc-file-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.doc-title {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--navyblue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+/* status pill */
+.doc-status {
+  font-size: 0.74rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-pending { background: rgba(144, 163, 180, 0.2); color: #5A7183; }
+.status-processing { background: var(--lightblue); color: var(--midblue); }
+.status-ready { background: var(--green-soft); color: var(--green); }
+.status-failed { background: var(--red-soft); color: var(--red-ink); }
+
+.btn-delete,
+.btn-retry {
+  background: none;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ink-muted);
+}
+
+.btn-delete:hover {
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+.btn-retry:hover {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+/* ========== CHAT ========== */
+.chat-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--bordertop);
+}
+
+.chat-header h2 {
+  margin-bottom: 0;
+}
+
+/* circular icon button (reference's rounded-full chip + shadow, hover lift) */
+.btn-new-chat {
+  background: var(--white);
+  border: 1px solid var(--lightgrey);
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--midblue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-new-chat:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: var(--white);
+  transform: translateY(-2px);
+}
+
+.chat-messages {
+  flex: 1;
+  min-height: 320px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 4px 6px;
+  margin-bottom: 18px;
+  scroll-behavior: smooth;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: var(--lightgrey);
+  border-radius: 999px;
+}
+
+/* Message animations */
+@keyframes messageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 22px;
+  animation: messageFadeIn 0.3s ease-out;
+}
+
+.message-user {
+  flex-direction: row-reverse;
+}
+
+.message-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.message-user .message-avatar {
+  background: var(--blue);
+  color: var(--white);
+}
+
+.message-assistant .message-avatar {
+  background: var(--bluebg);
+  color: var(--midblue);
+}
+
+.message-content {
+  max-width: 82%;
+  min-width: 0;
+}
+
+.message-role {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.message-text {
+  background: #F3F8FE;
+  padding: 12px 18px;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  line-height: 1.9;
+  word-wrap: break-word;
+  color: var(--navyblue);
+}
+
+.message-user .message-text {
+  background: var(--blue);
+  color: var(--white);
+}
+
+/* فشل توليد الرد (حدث خطأ طرفي في البث) */
+.message-error,
+.message-error-note {
+  margin-top: 8px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--red-soft);
+  border: 1px solid rgba(214, 69, 80, 0.22);
+  color: var(--red-ink);
+  font-size: 0.86rem;
+  line-height: 1.8;
+  word-wrap: break-word;
+  direction: rtl;
+  text-align: right;
+}
+
+.message-failed .message-text {
+  border: 1px dashed rgba(214, 69, 80, 0.5);
+}
+
+/* ---- sources ---- */
+.sources-toggle {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--midblue);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sources-toggle summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  width: fit-content;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  font-weight: 600;
+  list-style: none;
+  transition: background 0.2s;
+}
+
+.sources-toggle summary::-webkit-details-marker {
+  display: none;
+}
+
+.sources-toggle summary:hover {
+  background: var(--lightblue);
+}
+
+.sources-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.source-item {
+  background: #F7FBFF;
+  border: 1px solid rgba(128, 135, 137, 0.2);
+  border-radius: 18px;
+  padding: 14px 16px;
+  font-size: 0.82rem;
+}
+
+.source-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.source-item-title {
+  font-weight: 600;
+  color: var(--navyblue);
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-item-score {
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--midblue);
+  background: var(--lightblue);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.source-excerpt {
+  color: var(--ink-muted);
+  line-height: 1.75;
+  margin: 0;
+  /* Save the chunk's own line structure instead of merging into one wall. */
+  white-space: pre-wrap;
+  word-break: break-word;
+  /* Plain block clamp (max-height) — NOT -webkit-box/-webkit-line-clamp, which
+     has a known Blink bug that scrambles RTL/Arabic visual ordering. */
+  max-height: 7em; /* 4 أسطر × 1.75 */
+  overflow: hidden;
+}
+
+.source-excerpt:not(.expanded) {
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent);
+}
+
+.source-excerpt.expanded {
+  max-height: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.source-expand-btn {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  /* --blue-600, not --blue: this label is text at 0.76rem, and --blue measures
+     3.97:1 on the page wash where AA asks 4.5:1. --blue-600 is 5.48:1 and is
+     visually the same blue at this size. --blue is kept for the SVG icons
+     below, which are governed by 1.4.11's 3:1 rather than 1.4.3's 4.5:1. */
+  color: var(--blue-600);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.source-expand-btn:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+/* ========== CHAT INPUT ========== */
+.chat-input {
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid var(--bordertop);
+  padding-top: 18px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 12px 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: #FBFDFF;
+  font-size: 0.92rem;
+  color: var(--navyblue);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chat-input input::placeholder {
+  color: var(--ink-muted);
+}
+
+.chat-input input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 117, 255, 0.15);
+}
+
+.chat-input input:disabled {
+  background: var(--babyblue);
+}
+
+.chat-input button {
+  padding: 12px 30px;
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  border-radius: var(--leaf);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-blue);
+  transition: background 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-input button:hover:not(:disabled) {
+  background: var(--blue-600);
+}
+
+.chat-input button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.chat-input button:disabled {
+  background: var(--darkgray);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ========== SETTINGS ========== */
+.settings-wrapper {
+  margin-top: 24px;
+}
+
+.btn-settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: var(--navyblue);
+  transition: all 0.2s;
+}
+
+.btn-settings-toggle:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.btn-settings-toggle svg {
+  transition: transform 0.25s ease;
+}
+
+.btn-settings-toggle.active svg {
+  transform: rotate(30deg);
+}
+
+.settings-panel {
+  margin-top: 12px;
+  animation: messageFadeIn 0.25s ease-out;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-field label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--navyblue);
+}
+
+.settings-field input {
+  padding: 12px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: #FBFDFF;
+  font-size: 0.9rem;
+  color: var(--navyblue);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Consolas', 'Menlo', monospace;
+  letter-spacing: 1px;
+}
+
+.settings-field input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 117, 255, 0.15);
+}
+
+.settings-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.settings-actions button {
+  cursor: pointer;
+  font-size: 0.87rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--blue);
+  color: var(--white);
+  border: 1.5px solid transparent;
+  border-radius: var(--leaf);
+  padding: 11px 28px;
+  font-weight: 600;
+  box-shadow: var(--shadow-blue);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--blue-600);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background: var(--darkgray);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--white);
+  color: var(--midblue);
+  border: 1.5px solid var(--lightgrey) !important;
+  border-radius: var(--leaf);
+  padding: 11px 28px;
+  font-weight: 500;
+}
+
+.btn-secondary:hover {
+  background: var(--blue);
+  border-color: var(--blue) !important;
+  color: var(--white);
+}
+
+.settings-status {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.settings-status.success {
+  background: var(--green-soft);
+  color: var(--green);
+  border: 1px solid rgba(77, 213, 143, 0.4);
+}
+
+.settings-status.error {
+  background: var(--red-soft);
+  color: var(--red-ink);
+  border: 1px solid rgba(214, 69, 80, 0.22);
+}
+
+.provider-selector {
+  display: flex;
+  gap: 10px;
+}
+
+.provider-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px 16px;
+  border: 1.5px solid var(--lightgrey);
+  border-radius: 16px;
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: var(--midblue);
+  transition: all 0.2s;
+}
+
+.provider-btn:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.provider-btn.active {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: var(--white);
+  font-weight: 600;
+  box-shadow: var(--shadow-blue);
+}
+
+.settings-hint {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  margin: 0;
+  line-height: 1.7;
+}
+
+.ollama-info {
+  background: var(--green-soft);
+  border: 1px solid rgba(77, 213, 143, 0.4);
+  border-radius: 18px;
+  padding: 16px 18px;
+}
+
+.ollama-info p {
+  margin: 6px 0;
+  font-size: 0.88rem;
+  color: var(--navyblue);
+}
+
+.ollama-info code {
+  background: var(--offwhite);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  color: var(--midblue);
+}
+
+/* ========== SKELETON LOADING ========== */
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #EEF4FA 25%, #E3EDF7 37%, #EEF4FA 63%);
+  background-size: 200px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+  width: 80%;
+}
+
+.skeleton-text:last-child {
+  width: 50%;
+}
+
+.skeleton-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+}
+
+.skeleton-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.skeleton-lines {
+  flex: 1;
+}
+
+/* ========== SETUP WIZARD / AUTH (dialog language) ========== */
+.setup-overlay {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* soft blue wash echoing the reference hero's decorative header shape */
+  background:
+    radial-gradient(1100px 520px at 50% -8%, rgba(218, 235, 255, 0.95), transparent 62%),
+    linear-gradient(180deg, #F4F9FE 0%, #FFFFFF 100%);
+  padding: 24px;
+}
+
+.setup-card {
+  background: var(--white);
+  border-radius: 32px;
+  padding: 48px 44px;
+  max-width: 540px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+
+/* circular brand chip (reference's rounded-full + soft shadow) */
+.setup-logo {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 22px;
+  border-radius: 999px;
+  background: var(--bluebg);
+  color: var(--midblue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14px 28px -12px rgba(0, 117, 255, 0.45);
+}
+
+/* The lock marks the account step, so it gets a heavier treatment than the
+   plain chip: a two-tone brand gradient, a crisp inner ring, a dashed outer
+   seal, and a soft glow. The keyhole is punched in the chip's own background
+   so it stays readable whichever gradient stops are in play. */
+.setup-logo--lock {
+  position: relative;
+  background: linear-gradient(145deg, var(--blue) 0%, var(--midblue) 100%);
+  color: var(--white);
+  border: 3px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(0, 39, 111, 0.14),
+    0 16px 30px -10px rgba(0, 39, 111, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.setup-logo--lock::after {
+  /* dashed "sealed" ring, kept clear of the glyph itself */
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 999px;
+  border: 1.5px dashed rgba(0, 39, 111, 0.3);
+  pointer-events: none;
+}
+
+/* keyhole punched through the badge, not drawn on top of it */
+.setup-logo--lock .lock-keyhole {
+  fill: var(--midblue);
+}
+
+.setup-card h1 {
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+  font-weight: 600;
+  color: var(--navyblue);
+  margin-bottom: 6px;
+}
+
+.setup-card h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  color: var(--navyblue);
+  margin-bottom: 10px;
+}
+
+.setup-subtitle {
+  font-size: 0.95rem;
+  color: var(--ink-muted);
+  margin-bottom: 28px;
+}
+
+.setup-desc {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  margin-bottom: 24px;
+  line-height: 1.8;
+}
+
+/* tinted panel holding white cards — the reference's signature composition */
+.setup-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: rgba(47, 184, 227, 0.16);
+  border-radius: 24px;
+  padding: 22px;
+}
+
+.setup-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  border: none;
+  border-radius: 24px;
+  background: var(--white);
+  box-shadow: var(--shadow-xl);
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.setup-choice:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 28px 42px -16px rgba(0, 39, 111, 0.3);
+}
+
+.setup-choice-icon {
+  display: flex;
+  align-items: center;
+  color: var(--midblue);
+  margin-bottom: 4px;
+}
+
+.setup-choice-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  color: var(--navyblue);
+}
+
+.setup-choice-desc {
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+}
+
+.setup-key-input {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.setup-key-input input {
+  padding: 14px 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: #FBFDFF;
+  font-size: 0.92rem;
+  color: var(--navyblue);
+  font-family: 'Consolas', 'Menlo', monospace;
+  outline: none;
+  direction: ltr;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.setup-key-input input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 117, 255, 0.15);
+}
+
+.setup-key-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.setup-link {
+  /* --blue-600 for the same reason as .source-expand-btn: this is a text link
+     and --blue measures 3.97:1 on --page. The underline keeps it readable as a
+     link independently of colour (WCAG 1.4.1), which --blue alone would not. */
+  color: var(--blue-600);
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 117, 255, 0.4);
+  transition: all 0.3s;
+}
+
+/* the reference's .space-links hover (letter-spacing) — safe here because
+   this label is a latin URL; never applied to Arabic text, where it would
+   pull joined letters apart. */
+.setup-link:hover {
+  color: var(--blue-600);
+  border-color: var(--blue-600);
+  letter-spacing: 1px;
+}
+
+.setup-error {
+  color: var(--red-ink);
+  font-size: 0.86rem;
+  padding: 12px 16px;
+  background: var(--red-soft);
+  border: 1px solid rgba(214, 69, 80, 0.22);
+  border-radius: 16px;
+}
+
+.setup-code {
+  background: var(--navyblue);
+  border-radius: 16px;
+  padding: 18px;
+  margin: 18px 0;
+  text-align: left;
+}
+
+.setup-code pre {
+  color: var(--babyblue);
+  font-family: 'Consolas', 'Menlo', monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.setup-start {
+  margin-top: 16px;
+  width: 100%;
+  padding: 15px 34px;
+  font-size: 1rem;
+  border-radius: var(--leaf-lg);
+}
+
+/* ---- auth ---- */
+.auth-card {
+  text-align: center;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 28px;
+  background: var(--blue-soft);
+  border-radius: 999px;
+  padding: 5px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--midblue);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-tab.active {
+  background: var(--blue);
+  color: var(--white);
+  font-weight: 600;
+  box-shadow: var(--shadow-blue);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: right;
+}
+
+.auth-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--navyblue);
+}
+
+.auth-label input {
+  padding: 13px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: #FBFDFF;
+  font-size: 0.92rem;
+  color: var(--navyblue);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-label input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 117, 255, 0.15);
+}
+
+.auth-hint {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  line-height: 1.7;
+  text-align: right;
+}
+
+/* ========== RESPONSIVE (reference lg = 1024px) ========== */
+@media (max-width: 1024px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0 12px 48px;
+  }
+
+  .app-header {
+    margin: 0 -12px 24px;
+  }
+
+  .header-content {
+    padding: 14px 12px;
+    flex-wrap: wrap;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .app-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .message-content {
+    max-width: 90%;
+  }
+
+  .doc-title {
+    max-width: 140px;
+  }
+
+  .card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .card h2 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  .setup-card {
+    padding: 36px 22px;
+    border-radius: 24px;
+  }
+
+  .setup-choices {
+    padding: 16px;
+  }
+
+  .chat-messages {
+    max-height: 420px;
+  }
+}

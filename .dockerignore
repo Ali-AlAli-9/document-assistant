@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+*.so
+venv/
+.venv/
+
+# Environment
+.env
+.env.example
+
+# Database
+*.sqlite3
+
+# Local-only helper scripts
+_local/
+
+# Collected static files — the image runs `collectstatic` itself
+staticfiles/
+
+# ChromaDB
+chroma_db/
+
+# Media files (client documents must never end up inside a published image)
+media/
+
+# Frontend (rebuild inside container)
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Git
+.git/
+.gitignore
+
+# Docs
+README.md

@@ -1,0 +1,59 @@
+# Render Blueprint — نشر المشروع بضغطة واحدة.
+#
+# Render يقرأ هذا الملف عند ربطه بمستودع Git، فيبني صورة Docker من
+# Dockerfile الجذر وينشئ الخدمة المجانية بكل متغيّرات البيئة أدناه.
+#
+# النطاق يُضبط من أول نشر ولا يحتاج تعديلًا من Dashboard:
+# النمط ".onrender.com" في Django يقبل النطاق وكل نطاقاته الفرعية، فيعمل مع
+# أي اسم تختاره Render (بما فيه اللاحقة العشوائية عند تصادم الاسم) — ويبقى
+# مرفوضًا لـ Host_header مثل evil.com، وهو ما يمنع *.onrender.com يعني *.com.
+#
+# CORS: لا حاجة له في الإنتاج إطلاقًا — الواجهة يُقدّمها Django من نفس الأصل،
+# فلا يجري المتصفح أي طلب عبر-أصل. Fuj��ة CORS موجودة لخادم Vite (:5173) فقط.
+# انتبه: القائمة الفارغة تعني "لا عابر للأصل" (fail-closed في rag_project/settings.py)،
+# ولا تعني "افتح الكل".
+services:
+  - type: web
+    name: document-assistant
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health/
+    envVars:
+      - key: DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      # النطاق + كل نطاقاته الفرعية: ".onrender.com" وليس "*" — انظر التعليق
+      # أعلى الملف. عند إضافة نطاقك الخاص أضفه هنا (مثل "example.com").
+      - key: ALLOWED_HOSTS
+        value: '[".onrender.com", "localhost", "127.0.0.1"]'
+      # لا عابر-أصل في الإنتاج: الواجهة من نفس الأصل.
+      - key: CORS_ORIGINS
+        value: '[]'
+
+      # SQLite: بلا خدمة خارجية، يُنشأ بـ migrate عند كل إقلاع على قرص مؤقت.
+      - key: DB_NAME
+        value: sqlite
+
+      # ChromaDB و multimodel embeddings
+      - key: CHROMA_PERSIST_DIR
+        value: /data/chroma_db
+      # الاسم الكامل لمستودع HuggingFace. المحوّل يحوّله إلى المجلد المحلي
+      # multilingual-e5-small تلقائيًّا (راجع resolve_local_model_path).
+      - key: EMBEDDING_MODEL
+        value: intfloat/multilingual-e5-small
+      - key: EMBEDDING_MODEL_DIR
+        value: /app/models
+
+      # ضروري على الاستضافة: يمنع حذف المستندات والمتجهات عند كل إيقاف/استيقاظ.
+      - key: RAG_CLEANUP_ON_EXIT
+        value: "0"
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
+
+      # كل زائر يُدخل مفتاح Gemini خاصًّا به من معالج الإعداد؛ لا يوجد مفتاح
+      # على الخادم، وهذا مقصود.
+      - key: LLM_PROVIDER
+        value: gemini

@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: rag_django
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: "false"
+      SECRET_KEY: ${SECRET_KEY}
+      DB_HOST: db
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      CHROMA_PERSIST_DIR: /data/chroma_db
+      # Never wipe uploads/documents/vector store when the container stops.
+      RAG_CLEANUP_ON_EXIT: "0"
+    volumes:
+      - media_data:/app/media
+      - chroma_data:/data/chroma_db
+      - ./frontend/dist:/app/frontend/dist:ro
+    # Single threaded worker: one embedding model in memory, and threads for the
+    # SSE chat stream. See the Dockerfile for the reasoning.
+    command: >-
+      sh -c "python manage.py migrate --noinput &&
+      gunicorn rag_project.wsgi:application --bind 0.0.0.0:8000
+      --workers 1 --worker-class gthread --threads 4 --timeout 600
+      --forwarded-allow-ips='*'"
+
+volumes:
+  postgres_data:
+  media_data:
+  chroma_data:
